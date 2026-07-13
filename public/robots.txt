@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /print
+Disallow: /admin
+Disallow: /app
+Disallow: /dashboard
+Disallow: /profile
+
+Sitemap: https://digital-prescription-app.lovable.app/sitemap.xml

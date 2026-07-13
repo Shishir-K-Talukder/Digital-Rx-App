@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS can_print boolean NOT NULL DEFAULT false;
+UPDATE public.profiles SET can_print = true WHERE user_id IN (SELECT user_id FROM public.user_roles WHERE role = 'admin');

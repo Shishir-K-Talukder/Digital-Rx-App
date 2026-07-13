@@ -1,0 +1,16 @@
+# Digital Rx
+
+> Bangladesh's modern digital prescription platform for doctors — 30,000+ medicines, dose calculators, custom print layouts, and patient records.
+
+Digital Rx helps doctors write prescriptions in seconds. It includes a 30,000+ medicine database sourced from medex.com.bd, pediatric and adult dose calculators, EDD/BMI/GFR/insulin/ovulation tools, treatment templates, appointments, and cloud-synced patient records.
+
+## Pages
+
+- [Home](/): Product overview, features, and pricing plans.
+- [About](/about): Mission, vision, and the team behind Digital Rx.
+- [Contact](/contact): Request a demo, ask about pricing, or get support.
+
+## Optional
+
+- [Log in](/login): Existing-user sign in.
+- [Sign up](/signup): Create a new doctor account.

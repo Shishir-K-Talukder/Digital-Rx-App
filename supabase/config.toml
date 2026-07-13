@@ -1,0 +1,4 @@
+project_id = "zkfhuinzjsguebxbhfas"
+
+[functions.sync-medicines]
+verify_jwt = false

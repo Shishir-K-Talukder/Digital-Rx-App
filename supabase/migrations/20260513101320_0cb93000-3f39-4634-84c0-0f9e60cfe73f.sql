@@ -1,0 +1,1 @@
+ALTER TABLE public.medicines ADD CONSTRAINT medicines_name_strength_company_key UNIQUE (name, strength, company);
