@@ -95,6 +95,7 @@ const Admin = () => {
 
   // Sync state
   const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<string | null>(null);
   const [syncInfo, setSyncInfo] = useState<{ page: number; total_pages: number; last_run: string } | null>(null);
 
   useEffect(() => {
@@ -313,16 +314,20 @@ const Admin = () => {
   const runMedicineSync = async (reset = false) => {
     setSyncing(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) { toast.error("Not authenticated"); return; }
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-medicines?pages=60${reset ? "&reset=1" : ""}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-      });
-      const json = await res.json();
-      if (!res.ok) { toast.error(json.error || `HTTP ${res.status}`); return; }
+      const query = new URLSearchParams({ pages: "10" });
+      if (reset) query.set("reset", "1");
+
+      const { data: json, error } = await supabase.functions.invoke(
+        `sync-medicines?${query.toString()}`,
+        { method: "POST" },
+      );
+
+      if (error) {
+        console.error("sync-medicines failed:", error);
+        toast.error(error.message || "Sync failed");
+        return;
+      }
+      if (!json?.success) { toast.error(json?.error || "Sync failed"); return; }
       toast.success(`Synced pages ${json.fromPage}–${json.toPage} • ${json.upserted} medicines updated`);
       loadAll();
       loadSyncInfo();
@@ -330,6 +335,44 @@ const Admin = () => {
       toast.error(`Sync failed: ${(e as Error).message}`);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // One-click: keep calling the function until every page is done
+  const runFullMedicineSync = async (reset = true) => {
+    setSyncing(true);
+    setSyncProgress("Starting full sync...");
+    let totalUpserted = 0;
+    let batches = 0;
+    try {
+      let first = true;
+      while (true) {
+        const query = new URLSearchParams({ pages: "25" });
+        if (first && reset) query.set("reset", "1");
+        first = false;
+
+        const { data: json, error } = await supabase.functions.invoke(
+          `sync-medicines?${query.toString()}`,
+          { method: "POST" },
+        );
+        if (error) throw new Error(error.message);
+        if (!json?.success) throw new Error(json?.error || "Sync failed");
+
+        batches++;
+        totalUpserted += json.upserted || 0;
+        setSyncProgress(`Page ${json.toPage}/${json.totalPages || "?"} • ${totalUpserted.toLocaleString()} medicines`);
+
+        if (!json.nextPage || json.toPage >= json.totalPages) break;
+        if (batches > 200) break;
+      }
+      toast.success(`Full sync complete • ${totalUpserted.toLocaleString()} medicines updated`);
+      loadAll();
+      loadSyncInfo();
+    } catch (e) {
+      toast.error(`Sync failed: ${(e as Error).message}`);
+    } finally {
+      setSyncing(false);
+      setSyncProgress(null);
     }
   };
 
@@ -783,14 +826,19 @@ const Admin = () => {
                 <CardTitle className="text-sm flex items-center justify-between gap-2 flex-wrap">
                   <span>Medicine Database ({(medicinesTotal || medicines.length).toLocaleString()})</span>
                   <div className="flex items-center gap-2">
-                    {syncInfo && (
+                    {syncProgress ? (
+                      <span className="text-[10px] font-normal text-muted-foreground">{syncProgress}</span>
+                    ) : syncInfo && (
                       <span className="text-[10px] font-normal text-muted-foreground">
                         Last sync: {syncInfo.last_run ? new Date(syncInfo.last_run).toLocaleString() : "—"} • next page {((syncInfo.page || 0) + 1)}/{syncInfo.total_pages || "?"}
                       </span>
                     )}
-                    <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={syncing} onClick={() => runMedicineSync(false)}>
+                    <Button size="sm" className="h-8 gap-1.5 text-xs" disabled={syncing} onClick={() => runFullMedicineSync(true)} title="Sync every page in one click (takes a few minutes)">
                       <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
-                      {syncing ? "Syncing..." : "Sync from medex.com.bd"}
+                      {syncing ? "Syncing all..." : "Sync All Medicines"}
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={syncing} onClick={() => runMedicineSync(false)}>
+                      Continue batch
                     </Button>
                     <Button size="sm" variant="ghost" className="h-8 text-[10px]" disabled={syncing} onClick={() => runMedicineSync(true)} title="Restart sync from page 1">
                       Reset
