@@ -10,6 +10,8 @@ import { Baby, CalendarHeart, Scale, Pill, User, Activity, Syringe, Heart, Shiel
 import { PEDIATRIC_DRUGS, calculateDose, type PediatricDrug } from "@/lib/pediatricDrugs";
 import { ADULT_DRUGS, calculateAdultDose, type AdultDrug } from "@/lib/adultDrugs";
 import { addDays, differenceInDays, format, parseISO } from "date-fns";
+import GenericInfoPanel from "@/components/GenericInfoPanel";
+
 
 /* -------------------- EDD Calculator -------------------- */
 const EDDCalculator = () => {
@@ -198,6 +200,8 @@ const PediatricDose = () => {
             <div className="flex justify-between"><span className="text-muted-foreground">Std dose</span><span className="font-semibold">{selected.dailyDose || "—"}</span></div>
           </div>
         )}
+        {selected && <GenericInfoPanel generic={selected.generic} variant="pediatric" />}
+
         {result && (
           <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4 text-center">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Prescription Dose</p>
@@ -257,6 +261,8 @@ const AdultDose = () => {
             {selected.maxDaily && <div className="flex justify-between"><span className="text-muted-foreground">Max</span><span className="font-semibold">{selected.maxDaily}</span></div>}
           </div>
         )}
+        {selected && <GenericInfoPanel generic={selected.generic} variant="adult" />}
+
         {result && (!needsWeight || weight) && (
           <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4 text-center">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Prescription Dose</p>
