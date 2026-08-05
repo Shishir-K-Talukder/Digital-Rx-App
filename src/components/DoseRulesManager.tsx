@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, Plus, Baby, User, Search } from "lucide-react";
+import { Trash2, Plus, Baby, User, Search, Database, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import MedexLookup, { MedexResult } from "./MedexLookup";
+import GenericInfoPanel from "./GenericInfoPanel";
+
 
 // Use as any until generated types include the new tables
 const db = supabase as any;
@@ -90,6 +92,9 @@ const PediatricRulesManager = () => {
           <Input placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="h-9 text-xs" />
           <Button onClick={add} disabled={loading} className="h-9 gap-1 col-span-2 md:col-span-1"><Plus className="w-3.5 h-3.5" /> Add</Button>
         </div>
+
+        <GenericInfoPanel generic={form.generic} variant="pediatric" />
+
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -190,6 +195,10 @@ const AdultRulesManager = () => {
           <Button onClick={add} disabled={loading} className="h-9 gap-1 col-span-2 md:col-span-1"><Plus className="w-3.5 h-3.5" /> Add</Button>
         </div>
 
+        <GenericInfoPanel generic={form.generic} variant="adult" />
+
+
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-xs" />
@@ -223,11 +232,78 @@ const AdultRulesManager = () => {
   );
 };
 
-const DoseRulesManager = () => (
-  <div className="space-y-6">
-    <PediatricRulesManager />
-    <AdultRulesManager />
-  </div>
-);
+const GenericDoseSync = ({ onDone }: { onDone: () => void }) => {
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<{ page: number; total: number; ped: number; adult: number } | null>(null);
+
+  const syncAll = async () => {
+    setRunning(true);
+    setProgress(null);
+    let ped = 0, adult = 0, guard = 0;
+    try {
+      let reset = true;
+      while (guard++ < 400) {
+        const { data, error } = await supabase.functions.invoke(
+          `sync-generic-doses?pages=2${reset ? "&reset=1" : ""}`,
+          { body: {} },
+        );
+        if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
+        reset = false;
+        ped += (data as any).pediatricUpserted || 0;
+        adult += (data as any).adultUpserted || 0;
+        setProgress({ page: (data as any).toPage || 0, total: (data as any).totalPages || 0, ped, adult });
+        onDone();
+        if (!(data as any).nextPage) break;
+      }
+      toast.success(`Synced ${ped} pediatric & ${adult} adult generic dose rules`);
+    } catch (e: any) {
+      toast.error(e.message || "Generic dose sync failed");
+    } finally {
+      setRunning(false);
+      onDone();
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Database className="w-4 h-4 text-primary" /> Sync all generic dose rules from medex.com.bd
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-xs text-muted-foreground">
+          One click pulls every generic from medex.com.bd and fills both Pediatric and Adult dose rules with
+          indications, dosage text and calculated mg/kg values. This takes several minutes — keep this tab open.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button onClick={syncAll} disabled={running} className="h-9 gap-1.5 text-xs">
+            {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Database className="w-3.5 h-3.5" />}
+            {running ? "Syncing all generics..." : "Sync All Generic Doses"}
+          </Button>
+          {progress && (
+            <span className="text-xs text-muted-foreground">
+              Page {progress.page}/{progress.total || "?"} — {progress.ped} pediatric, {progress.adult} adult
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const DoseRulesManager = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const reload = () => setRefreshKey((k) => k + 1);
+  return (
+    <div className="space-y-6">
+      <GenericDoseSync onDone={reload} />
+      <PediatricRulesManager key={`ped-${refreshKey}`} />
+      <AdultRulesManager key={`adult-${refreshKey}`} />
+    </div>
+  );
+};
 
 export default DoseRulesManager;
+

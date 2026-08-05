@@ -8,6 +8,8 @@ import { calculatePediatricDose, findMatchingPediatricRules } from "@/lib/pediat
 import type { Medicine } from "./MedicineSection";
 import type { MedicineOptions } from "./MedicineSettings";
 import { Baby, Loader2, Plus } from "lucide-react";
+import GenericInfoPanel from "./GenericInfoPanel";
+
 
 interface Props {
   options: MedicineOptions;
@@ -155,6 +157,9 @@ const PediatricDoseCalculator = ({ options, onAddMedicine }: Props) => {
           </div>
         </div>
       )}
+
+      {selectedMedicine && <div className="mb-3"><GenericInfoPanel generic={selectedMedicine.generic} variant="pediatric" /></div>}
+
 
       {selectedMedicine && !activeRule && (
         <div className="mb-3 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
