@@ -335,7 +335,7 @@ const PrintPreview = ({ doctor, patient, clinical, medicines, advice, printSetti
             <div className="mt-8 pt-3 border-t border-black text-xs">
               {advice.advice && (
                 <div className="mb-2">
-                  <p className="font-bold">Advice:</p>
+                  <p className="font-bold">উপদেশঃ</p>
                   <p className="whitespace-pre-wrap">
                     {advice.advice.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
                       part.startsWith("**") && part.endsWith("**") && part.length > 4
@@ -346,7 +346,7 @@ const PrintPreview = ({ doctor, patient, clinical, medicines, advice, printSetti
                 </div>
               )}
               {advice.followUpDate && (
-                <p><strong>Follow Up:</strong> {formatFollowUpBangla(advice.followUpDate)}</p>
+                <p><strong>পরবর্তী সাক্ষাৎঃ</strong> {formatFollowUpBangla(advice.followUpDate)}</p>
               )}
             </div>
           )}
