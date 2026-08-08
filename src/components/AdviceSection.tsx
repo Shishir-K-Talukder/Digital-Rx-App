@@ -72,7 +72,7 @@ const AdviceSection = ({ data, onChange, options, uiFontSize }: Props) => {
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2 space-y-2">
-          <Label className="field-label">Quick Advice</Label>
+          <Label className="field-label">উপদেশঃ</Label>
           <div className="flex gap-2">
             <Select onValueChange={handleAdviceSelect}>
               <SelectTrigger
@@ -109,7 +109,7 @@ const AdviceSection = ({ data, onChange, options, uiFontSize }: Props) => {
           />
         </div>
         <div className="space-y-2">
-          <Label className="field-label">Follow-up</Label>
+          <Label className="field-label">পরবর্তী সাক্ষাৎঃ</Label>
           <Select onValueChange={handleFollowUpSelect}>
             <SelectTrigger style={{ ...triggerStyle, height: `${triggerHeight}px` }}>
               <SelectValue placeholder="Select follow-up..." />
