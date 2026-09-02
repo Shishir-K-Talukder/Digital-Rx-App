@@ -8,6 +8,17 @@ export interface DoctorInfo {
   bmdcNo: string;
   chamberAddress: string;
   phone: string;
+  /** Extra print-header fields (stored in profiles.header_settings) */
+  preTitle?: string;
+  specializationBn?: string;
+  nameColor?: string;
+  specializationColor?: string;
+  chamber1Name?: string;
+  chamber1Address?: string;
+  chamber1Hours?: string;
+  chamber2Name?: string;
+  chamber2Address?: string;
+  chamber2Hours?: string;
 }
 
 interface Props {
