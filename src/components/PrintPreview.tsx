@@ -180,17 +180,70 @@ const PrintPreview = ({ doctor, patient, clinical, medicines, advice, printSetti
       }}
     >
       {settings.showDoctorInfo && (
-        <div className="text-center pb-3 mb-4 mx-auto w-full" style={{ minHeight: headerHeight, ...(headerWidth ? { maxWidth: headerWidth } : {}) }}>
+        <div className="pb-3 mb-4 mx-auto w-full" style={{ minHeight: headerHeight, ...(headerWidth ? { maxWidth: headerWidth } : {}) }}>
           {settings.showDoctorText && doctorHasInfo ? (
-            <>
-              <h1 className={`font-bold ${headerTextClass[settings.headerSize]}`}>{doctor.name}</h1>
-              {doctor.degrees && <p className="text-xs text-gray-600">{doctor.degrees}</p>}
-              {doctor.specialization && <p className="text-xs font-medium">{doctor.specialization}</p>}
-              {doctor.bmdcNo && <p className="text-[10px] text-gray-500">BMDC Reg. No: {doctor.bmdcNo}</p>}
-              {(doctor.chamberAddress || doctor.phone) && (
-                <p className="text-[10px] text-gray-500">{doctor.chamberAddress} {doctor.phone && `| ☎ ${doctor.phone}`}</p>
-              )}
-            </>
+            <div className="flex justify-between gap-4 items-start">
+              {/* Left: doctor identity */}
+              <div className="min-w-[38%]">
+                {doctor.preTitle && <p className="text-[11px] font-semibold">{doctor.preTitle}</p>}
+                <h1
+                  className={`font-bold leading-tight ${headerTextClass[settings.headerSize]}`}
+                  style={doctor.nameColor ? { color: doctor.nameColor } : undefined}
+                >
+                  {doctor.name}
+                </h1>
+                {doctor.degrees && (
+                  <p className="text-[11px] whitespace-pre-line leading-snug">{doctor.degrees}</p>
+                )}
+                {doctor.specialization && (
+                  <p
+                    className="text-[11px] font-medium"
+                    style={doctor.specializationColor ? { color: doctor.specializationColor } : undefined}
+                  >
+                    {doctor.specialization}
+                  </p>
+                )}
+                {doctor.bmdcNo && <p className="text-[11px]">বি.এম এন্ড ডি.সি রেজি নং : {doctor.bmdcNo}</p>}
+                {doctor.phone && <p className="text-sm font-bold mt-0.5">মোবাইল : {doctor.phone}</p>}
+              </div>
+
+              {/* Right: banner + chambers */}
+              <div className="flex-1 text-center">
+                {(doctor.specializationBn || doctor.specialization) && (
+                  <p
+                    className="text-lg font-bold tracking-wide"
+                    style={doctor.specializationColor ? { color: doctor.specializationColor } : undefined}
+                  >
+                    {doctor.specializationBn || doctor.specialization}
+                  </p>
+                )}
+                {(doctor.chamber1Name || doctor.chamber1Address || doctor.chamber2Name || doctor.chamber2Address) && (
+                  <div className="flex justify-end gap-6 mt-1 text-[10px] leading-snug">
+                    {(doctor.chamber1Name || doctor.chamber1Address || doctor.chamber1Hours) && (
+                      <div className="text-right">
+                        {doctor.chamber1Name && (
+                          <p className="font-bold text-[11px]">চেম্বার ০১ : {doctor.chamber1Name}</p>
+                        )}
+                        {doctor.chamber1Address && <p className="whitespace-pre-line">{doctor.chamber1Address}</p>}
+                        {doctor.chamber1Hours && <p className="whitespace-pre-line">{doctor.chamber1Hours}</p>}
+                      </div>
+                    )}
+                    {(doctor.chamber2Name || doctor.chamber2Address || doctor.chamber2Hours) && (
+                      <div className="text-right">
+                        {doctor.chamber2Name && (
+                          <p className="font-bold text-[11px]">চেম্বার ০২ : {doctor.chamber2Name}</p>
+                        )}
+                        {doctor.chamber2Address && <p className="whitespace-pre-line">{doctor.chamber2Address}</p>}
+                        {doctor.chamber2Hours && <p className="whitespace-pre-line">{doctor.chamber2Hours}</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!doctor.chamber1Name && !doctor.chamber1Address && !doctor.chamber2Name && !doctor.chamber2Address && doctor.chamberAddress && (
+                  <p className="text-[10px] mt-1 text-right whitespace-pre-line">{doctor.chamberAddress}</p>
+                )}
+              </div>
+            </div>
           ) : null}
         </div>
       )}
