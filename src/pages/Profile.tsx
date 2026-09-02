@@ -83,20 +83,20 @@ const Profile = () => {
   };
 
   const fields: { key: keyof DoctorInfo; label: string; placeholder: string }[] = [
-    { key: "preTitle", label: "Title Line (above name)", placeholder: "স্বাস্থ্য সহকারী ও মাইক্রোবায়োলজিস্ট" },
-    { key: "name", label: "Doctor Name", placeholder: "শিশির কুমার তালুকদার" },
-    { key: "degrees", label: "Degrees (one per line)", placeholder: "ডি.এম.এফ (ঢাকা)\nএম.সি.এইচ (ঢাকা শিশু হাসপাতাল)" },
+    { key: "preTitle", label: "Title Line (above name)", placeholder: "Medicine and Cardiologist" },
+    { key: "name", label: "Doctor Name", placeholder: "Dr.D.Abraham" },
+    { key: "degrees", label: "Degrees (one per line)", placeholder: "MBBS, MD, FCPS" },
     { key: "specialization", label: "Specialization (English)", placeholder: "Medicine Specialist" },
     { key: "specializationBn", label: "Specialization (Bangla banner)", placeholder: "মেডিসিন, চর্ম, বাতব্যথা, মা ও শিশু রোগে অভিজ্ঞ" },
-    { key: "bmdcNo", label: "BMDC No", placeholder: "ডি - ২৫৩২৪" },
+    { key: "bmdcNo", label: "BMDC No", placeholder: "A-25324" },
     { key: "chamberAddress", label: "Chamber Address (fallback)", placeholder: "123 Green Road, Dhaka" },
-    { key: "phone", label: "Mobile", placeholder: "০১৭৭৩-০০৬৯৪০" },
-    { key: "chamber1Name", label: "Chamber 1 Name", placeholder: "মমতা ফার্মেসি" },
-    { key: "chamber1Address", label: "Chamber 1 Address", placeholder: "রসুলপুর বাজার, পীরগঞ্জ, রংপুর।" },
-    { key: "chamber1Hours", label: "Chamber 1 Visiting Hours", placeholder: "সোমবার - শনিবার, সকাল ০৯ টা - দুপুর ১২ পর্যন্ত।" },
-    { key: "chamber2Name", label: "Chamber 2 Name", placeholder: "মা-বাবা চিকিৎসালয়" },
-    { key: "chamber2Address", label: "Chamber 2 Address", placeholder: "বালিকা বিদ্যালয়ের সামনে, ভেন্ডাবাড়ি বাজার, পীরগঞ্জ, রংপুর।" },
-    { key: "chamber2Hours", label: "Chamber 2 Visiting Hours", placeholder: "সোমবার - শনিবার, দুপুর ০২ টা - রাত ১০ পর্যন্ত।" },
+    { key: "phone", label: "Mobile", placeholder: "0177---0000" },
+    { key: "chamber1Name", label: "Chamber 1 Name", placeholder: "Popular" },
+    { key: "chamber1Address", label: "Chamber 1 Address", placeholder: "Rangpur" },
+    { key: "chamber1Hours", label: "Chamber 1 Visiting Hours", placeholder: "Saturday-Friday" },
+    { key: "chamber2Name", label: "Chamber 2 Name", placeholder: "Update" },
+    { key: "chamber2Address", label: "Chamber 2 Address", placeholder: "Dhaka" },
+    { key: "chamber2Hours", label: "Chamber 2 Visiting Hours", placeholder: "Friday" },
   ];
 
   const colorFields: { key: keyof DoctorInfo; label: string; fallback: string }[] = [
