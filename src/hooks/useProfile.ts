@@ -12,6 +12,12 @@ const emptyProfile: DoctorInfo = {
   phone: "",
 };
 
+const HEADER_KEYS = [
+  "preTitle", "specializationBn", "nameColor", "specializationColor",
+  "chamber1Name", "chamber1Address", "chamber1Hours",
+  "chamber2Name", "chamber2Address", "chamber2Hours",
+] as const;
+
 const mapProfileToDoctorInfo = (data?: {
   name?: string;
   degrees?: string;
@@ -19,14 +25,21 @@ const mapProfileToDoctorInfo = (data?: {
   bmdc_no?: string;
   chamber_address?: string;
   phone?: string;
-} | null): DoctorInfo => ({
-  name: data?.name ?? "",
-  degrees: data?.degrees ?? "",
-  specialization: data?.specialization ?? "",
-  bmdcNo: data?.bmdc_no ?? "",
-  chamberAddress: data?.chamber_address ?? "",
-  phone: data?.phone ?? "",
-});
+  header_settings?: any;
+} | null): DoctorInfo => {
+  const h = (data?.header_settings ?? {}) as Record<string, string>;
+  const extras: Record<string, string> = {};
+  HEADER_KEYS.forEach((k) => { extras[k] = h?.[k] ?? ""; });
+  return {
+    name: data?.name ?? "",
+    degrees: data?.degrees ?? "",
+    specialization: data?.specialization ?? "",
+    bmdcNo: data?.bmdc_no ?? "",
+    chamberAddress: data?.chamber_address ?? "",
+    phone: data?.phone ?? "",
+    ...extras,
+  };
+};
 
 export const useProfile = () => {
   const { user } = useAuth();
@@ -79,6 +92,10 @@ export const useProfile = () => {
         bmdc_no: info.bmdcNo,
         chamber_address: info.chamberAddress,
         phone: info.phone,
+        header_settings: HEADER_KEYS.reduce((acc, k) => {
+          acc[k] = (info as any)[k] ?? "";
+          return acc;
+        }, {} as Record<string, string>),
       }, { onConflict: "user_id" })
       .select("*")
       .maybeSingle();
