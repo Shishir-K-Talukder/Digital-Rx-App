@@ -1,0 +1,67 @@
+diff --git a/src/components/ClinicalSection.tsx b/src/components/ClinicalSection.tsx
+index 56a5f91..d6c3377 100644
+--- a/src/components/ClinicalSection.tsx
++++ b/src/components/ClinicalSection.tsx
+@@ -240,16 +240,28 @@ const InvestigationTab = ({ value, onChange, investigationList }: { value: strin
+   );
+ };
+ 
+-const DrugHistoryMedicineSelector = ({ selectedMedicines, onChange }: { selectedMedicines: string[]; onChange: (meds: string[]) => void }) => {
++const DEFAULT_DRUG_HISTORY_FORMULATIONS = ["Tab", "Cap", "Syp", "Inj", "Drop", "Cream", "Oint", "Supp"];
++
++const DrugHistoryMedicineSelector = ({ selectedMedicines, onChange, options }: {
++  selectedMedicines: string[];
++  onChange: (meds: string[]) => void;
++  options?: MedicineOptions;
++}) => {
+   const [query, setQuery] = useState("");
+   const [showSuggestions, setShowSuggestions] = useState(false);
+-  const [selectedType, setSelectedType] = useState("Tab");
+-  const { suggestions } = useMedicineSearch(query);
++  const formulations = options?.types?.length ? options.types : DEFAULT_DRUG_HISTORY_FORMULATIONS;
++  const [selectedType, setSelectedType] = useState(formulations[0] || "Tab");
++  const { suggestions } = useMedicineSearch(query, options?.customMedicines || []);
+   const wrapperRef = useRef<HTMLDivElement>(null);
+ 
+-  const MEDICINE_TYPES = ["Tab", "Cap", "Syp", "Inj", "Drop", "Cream", "Oint", "Supp"];
++  useEffect(() => {
++    if (!formulations.includes(selectedType)) {
++      setSelectedType(formulations[0] || "Tab");
++    }
++  }, [formulations, selectedType]);
+ 
+-  const addMedicine = (displayText: string) => {
++  const addMedicine = (medicineName: string) => {
++    const displayText = `${selectedType}. ${medicineName.trim()}`;
+     if (!selectedMedicines.includes(displayText)) {
+       onChange([...selectedMedicines, displayText]);
+     }
+@@ -258,8 +270,9 @@ const DrugHistoryMedicineSelector = ({ selectedMedicines, onChange }: { selected
+   };
+ 
+   const addFromSuggestion = (s: MedicineSuggestion) => {
+-    const text = `${s.detectedType}. ${s.name} ${s.strength}`;
+-    addMedicine(text);
++    setQuery(`${s.name} ${s.strength}`.trim());
++    if (formulations.includes(s.detectedType)) setSelectedType(s.detectedType);
++    setShowSuggestions(false);
+   };
+ 
+   const addManual = () => {
+@@ -308,7 +321,7 @@ const DrugHistoryMedicineSelector = ({ selectedMedicines, onChange }: { selected
+               <SelectValue />
+             </SelectTrigger>
+             <SelectContent>
+-              {MEDICINE_TYPES.map((t) => (
++              {formulations.map((t) => (
+                 <SelectItem key={t} value={t} className="text-xs">{t}.</SelectItem>
+               ))}
+             </SelectContent>
+@@ -665,6 +678,7 @@ const ClinicalSection = ({ data, onChange, options }: Props) => {
+           <DrugHistoryMedicineSelector
+             selectedMedicines={data.drugHistoryMedicines || []}
+             onChange={(meds) => onChange({ ...data, drugHistoryMedicines: meds })}
++            options={options}
+           />
+         </TabsContent>
+ 
