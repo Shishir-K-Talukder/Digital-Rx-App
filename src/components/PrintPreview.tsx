@@ -11,6 +11,16 @@ export interface PrintSettings {
   headerSize: "small" | "medium" | "large" | "custom";
   customHeaderHeight?: string;
   customHeaderWidth?: string;
+  headerLogoUrl?: string;
+  headerLogoPath?: string;
+  headerLogoOpacity?: string;
+  headerLogoWidth?: string;
+  headerLogoHeight?: string;
+  headerDesignUrl?: string;
+  headerDesignPath?: string;
+  headerDesignOpacity?: string;
+  headerDesignWidth?: string;
+  headerDesignHeight?: string;
   patientInfoWidth?: string;
   patientInfoHeight?: string;
   clinicalNotesWidth?: string;
@@ -43,6 +53,12 @@ export const defaultPrintSettings: PrintSettings = {
   customHeight: "297",
   headerSize: "medium",
   customHeaderHeight: "80",
+  headerLogoOpacity: "100",
+  headerLogoWidth: "24",
+  headerLogoHeight: "24",
+  headerDesignOpacity: "100",
+  headerDesignWidth: "190",
+  headerDesignHeight: "25",
   showDoctorInfo: true,
   showDoctorText: true,
   showCC: true,
@@ -181,10 +197,41 @@ const PrintPreview = ({ doctor, patient, clinical, medicines, advice, printSetti
     >
       {settings.showDoctorInfo && (
         <div className="pb-3 mb-4 mx-auto w-full" style={{ minHeight: headerHeight, ...(headerWidth ? { maxWidth: headerWidth } : {}) }}>
-          {settings.showDoctorText && doctorHasInfo ? (
+          {settings.headerDesignUrl && (
+            <div className="flex justify-center mb-2">
+              <img
+                src={settings.headerDesignUrl}
+                alt="Prescription header design"
+                crossOrigin="anonymous"
+                style={{
+                  width: `${Math.min(240, Math.max(40, Number(settings.headerDesignWidth) || 190))}mm`,
+                  height: `${Math.min(80, Math.max(10, Number(settings.headerDesignHeight) || 25))}mm`,
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  opacity: Math.min(100, Math.max(0, Number(settings.headerDesignOpacity ?? "100"))) / 100,
+                }}
+              />
+            </div>
+          )}
+          {(settings.showDoctorText && doctorHasInfo) || settings.headerLogoUrl ? (
             <div className="flex justify-between gap-4 items-start">
+              {settings.headerLogoUrl && (
+                <img
+                  src={settings.headerLogoUrl}
+                  alt="Doctor logo"
+                  crossOrigin="anonymous"
+                  style={{
+                    width: `${Math.min(80, Math.max(10, Number(settings.headerLogoWidth) || 24))}mm`,
+                    height: `${Math.min(60, Math.max(10, Number(settings.headerLogoHeight) || 24))}mm`,
+                    maxWidth: "40%",
+                    objectFit: "contain",
+                    opacity: Math.min(100, Math.max(0, Number(settings.headerLogoOpacity ?? "100"))) / 100,
+                  }}
+                />
+              )}
+              {settings.showDoctorText && doctorHasInfo && <>
               {/* Left: doctor identity */}
-              <div className="min-w-[38%]">
+              <div className="min-w-[38%] flex-1">
                 {doctor.preTitle && <p className="text-[11px] font-semibold">{doctor.preTitle}</p>}
                 <h1
                   className={`font-bold leading-tight ${headerTextClass[settings.headerSize]}`}
@@ -243,6 +290,7 @@ const PrintPreview = ({ doctor, patient, clinical, medicines, advice, printSetti
                   <p className="text-[10px] mt-1 text-right whitespace-pre-line">{doctor.chamberAddress}</p>
                 )}
               </div>
+              </>}
             </div>
           ) : null}
         </div>
