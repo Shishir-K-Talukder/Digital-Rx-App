@@ -1,12 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { PrintSettings } from "./PrintPreview";
-import { SlidersHorizontal, Save, Check } from "lucide-react";
+import { SlidersHorizontal, Save, Check, ImagePlus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+const imageSettings = {
+  logo: {
+    label: "Logo PNG",
+    url: "headerLogoUrl",
+    path: "headerLogoPath",
+    opacity: "headerLogoOpacity",
+    width: "headerLogoWidth",
+    height: "headerLogoHeight",
+  },
+  design: {
+    label: "Header Design PNG",
+    url: "headerDesignUrl",
+    path: "headerDesignPath",
+    opacity: "headerDesignOpacity",
+    width: "headerDesignWidth",
+    height: "headerDesignHeight",
+  },
+} as const;
+
+type HeaderImageKind = keyof typeof imageSettings;
 
 interface Props {
   settings: PrintSettings;
@@ -15,9 +38,13 @@ interface Props {
 
 const PrintSetup = ({ settings, onChange }: Props) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [local, setLocal] = useState<PrintSettings>(settings);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState<HeaderImageKind | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const designInputRef = useRef<HTMLInputElement>(null);
 
   // Sync from parent when settings load from DB
   useEffect(() => {
@@ -35,6 +62,17 @@ const PrintSetup = ({ settings, onChange }: Props) => {
         return;
       }
 
+      const obsoletePaths = ([
+        [settings.headerLogoPath, local.headerLogoPath],
+        [settings.headerDesignPath, local.headerDesignPath],
+      ] as const)
+        .map(([oldPath, newPath]) => oldPath && oldPath !== newPath ? oldPath : null)
+        .filter((path): path is string => !!path && !!user && path.startsWith(`${user.id}/print-header/`));
+      if (obsoletePaths.length) {
+        const { error } = await supabase.storage.from("profile-photos").remove(obsoletePaths);
+        if (error) console.error("Could not remove previous print header image:", error.message);
+      }
+
       setSaved(true);
       toast({ title: "Saved", description: "Print settings saved to database successfully." });
       setTimeout(() => setSaved(false), 2000);
@@ -46,6 +84,135 @@ const PrintSetup = ({ settings, onChange }: Props) => {
     }
   };
 
+  const handlePngUpload = async (kind: HeaderImageKind, file?: File) => {
+    if (!file) return;
+    if (file.type !== "image/png") {
+      toast({ title: "PNG file required", description: "Choose a PNG image for print headers." });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image is too large", description: "Choose a PNG image smaller than 5 MB." });
+      return;
+    }
+    if (!user) {
+      toast({ title: "Sign in required", description: "Sign in before uploading print images." });
+      return;
+    }
+
+    setUploadingAsset(kind);
+    try {
+      const path = `${user.id}/print-header/${kind}-${Date.now()}-${crypto.randomUUID()}.png`;
+      const { error } = await supabase.storage.from("profile-photos").upload(path, file, {
+        cacheControl: "3600",
+        contentType: "image/png",
+        upsert: false,
+      });
+      if (error) throw error;
+
+      const { data } = supabase.storage.from("profile-photos").getPublicUrl(path);
+      const fields = imageSettings[kind];
+      setLocal((current) => ({
+        ...current,
+        [fields.url]: data.publicUrl,
+        [fields.path]: path,
+        [fields.opacity]: current[fields.opacity] || "100",
+      }));
+      toast({ title: "PNG uploaded", description: "Save Print Page Setup to use this image on prescriptions." });
+    } catch (error) {
+      console.error("Print PNG upload failed:", error);
+      toast({ title: "Upload failed", description: error instanceof Error ? error.message : "The PNG could not be uploaded." });
+    } finally {
+      setUploadingAsset(null);
+    }
+  };
+
+  const renderPngControls = (kind: HeaderImageKind) => {
+    const fields = imageSettings[kind];
+    const url = local[fields.url] || "";
+    const opacity = local[fields.opacity] || "100";
+    const width = local[fields.width] || (kind === "logo" ? "24" : "190");
+    const height = local[fields.height] || (kind === "logo" ? "24" : "25");
+    const inputRef = kind === "logo" ? logoInputRef : designInputRef;
+
+    return (
+      <div key={kind} className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <Label className="text-xs font-semibold text-foreground">{fields.label}</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              type="file"
+              accept="image/png,.png"
+              className="sr-only"
+              onChange={(event) => {
+                void handlePngUpload(kind, event.target.files?.[0]);
+                event.currentTarget.value = "";
+              }}
+            />
+            <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={uploadingAsset !== null} onClick={() => inputRef.current?.click()}>
+              <ImagePlus className="w-3.5 h-3.5" />
+              {uploadingAsset === kind ? "Uploading..." : "Upload PNG"}
+            </Button>
+            {url && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 gap-1.5 text-xs"
+                disabled={uploadingAsset !== null}
+                onClick={() => setLocal((current) => ({ ...current, [fields.url]: "", [fields.path]: "" }))}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Remove
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {url && (
+          <div className="flex min-h-20 items-center justify-center rounded-md border border-border bg-muted/20 p-2">
+            <img src={url} alt={`${fields.label} preview`} className="max-h-20 max-w-full object-contain" style={{ opacity: Math.min(100, Math.max(0, Number(opacity))) / 100 }} />
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <Label className="text-[11px] text-muted-foreground mb-1 block">Opacity (0 = transparent, 100 = solid)</Label>
+            <Input
+              value={opacity}
+              onChange={(event) => setLocal({ ...local, [fields.opacity]: event.target.value })}
+              className="h-9 text-xs"
+              type="number"
+              min={0}
+              max={100}
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-muted-foreground mb-1 block">Width (mm)</Label>
+            <Input
+              value={width}
+              onChange={(event) => setLocal({ ...local, [fields.width]: event.target.value })}
+              className="h-9 text-xs"
+              type="number"
+              min={kind === "logo" ? 10 : 40}
+              max={kind === "logo" ? 80 : 240}
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-muted-foreground mb-1 block">Height (mm)</Label>
+            <Input
+              value={height}
+              onChange={(event) => setLocal({ ...local, [fields.height]: event.target.value })}
+              className="h-9 text-xs"
+              type="number"
+              min={10}
+              max={kind === "logo" ? 60 : 80}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="section-card p-5">
       <div className="flex items-center justify-between mb-4">
@@ -53,7 +220,7 @@ const PrintSetup = ({ settings, onChange }: Props) => {
           <SlidersHorizontal className="w-4 h-4 text-primary" />
           Print Page Setup
         </h3>
-        <Button type="button" size="sm" onClick={handleSave} disabled={saving} className="gap-1.5 h-8 text-xs">
+        <Button type="button" size="sm" onClick={handleSave} disabled={saving || uploadingAsset !== null} className="gap-1.5 h-8 text-xs">
           {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
           {saving ? "Saving..." : saved ? "Saved!" : "Save Settings"}
         </Button>
@@ -117,6 +284,14 @@ const PrintSetup = ({ settings, onChange }: Props) => {
             </div>
           </>
         )}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-border">
+        <Label className="text-[11px] text-muted-foreground font-semibold mb-3 block">Prescription Header PNG Setup</Label>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {renderPngControls("logo")}
+          {renderPngControls("design")}
+        </div>
       </div>
 
       <div className="mt-5 pt-4 border-t border-border">
